@@ -103,3 +103,215 @@ if "file_a" === "file_b":  -- Instant hash check
 ---
 
 *Spec updated: 2026-04-29 | Authors: Poppy & Anna (The one who actually writes the docs)*
+
+
+---
+
+## 25. Pattern Matching on File Content *(Poppy — §25)*
+
+FileOS needs a first-class `match` statement that operates on file content, extensions, size, and metadata — not just values. This is the most glaring gap in the spec right now.
+
+```fileos
+match read "config.json":
+    has "debug_mode: true"  => warn "Debug mode is ON!"
+    has "api_key"           => print "API key present"
+    empty                   => fail "Config is empty!"
+    _                       => print "Config looks fine"
+
+-- Match on file metadata
+match "upload":
+    ext == ".csv"   => call process_csv("upload")
+    ext == ".json"  => call process_json("upload")
+    size > 100mb    => fail "File too large!"
+    _               => fail "Unknown file type"
+
+-- Match on path/name patterns
+match ls "./logs":
+    name has "error"    => print "Error logs found!"
+    name has "access"   => archive each
+    _                   => skip
+```
+
+**Rules:**
+- `match` operates on files, strings, paths, or metadata structs
+- Arms are tested top-to-bottom, first match wins
+- `_` is the wildcard/default arm (required if not exhaustive)
+- `has` keyword for substring/content match
+- `ext`, `size`, `name`, `modified` are match predicates on file metadata
+- Returns the value of the matching arm expression
+- Shadow stream propagation: if input is a `.err`, all arms are skipped and the error continues
+
+---
+
+## 26. Template Files (`.tmpl`) *(Poppy — §26)*
+
+FileOS needs code generation baked in. `.tmpl` files are first-class file type — a template is a file with `{{}}` interpolation that gets rendered into a real output file.
+
+```fileos
+-- Create a template file
+write "report.tmpl" <- """
+# Report: {{title}}
+Generated: {{date}}
+
+## Summary
+{{summary}}
+
+Total files processed: {{count}}
+"""
+
+-- Render a template -> real file
+let ctx = { title: "Weekly Logs", date: today, summary: "All clear", count: 42 }
+render "report.tmpl" with ctx -> "reports/weekly.md"
+
+-- Inline template rendering (no .tmpl file needed)
+let msg = template "Hello, {{name}}! You have {{n}} files." with { name: "Poppy", n: 7 }
+```
+
+**Rules:**
+- `.tmpl` files are lazy — they are never executed, only rendered
+- Rendering produces a new file or a string
+- Template context is a `.json` struct or inline map
+- Missing keys in context = render error (written to `.err` shadow)
+- Nested templates: `{{> partial.tmpl}}` includes another template
+- Templates can `{{for each item in items}} ... {{end}}` — yes, loops in templates
+
+---
+
+## 27. The `vault` API — Encrypted File Storage *(Poppy — §27)*
+
+The stdlib mentioned `std.crypt` but didn't spec it. Here's the real thing.
+
+```fileos
+-- Seal a file (encrypt in-place, replaces file with .vlt version)
+vault seal "secrets.json"             -- AES-256-GCM, key from $VAULT_KEY env
+vault seal "secrets.json" with "mypassphrase"
+
+-- Unseal (decrypt) to read
+let data = vault open "secrets.vlt"
+let data = vault open "secrets.vlt" with "mypassphrase"
+
+-- Vault scope — automatic seal on scope exit
+vault scope:
+    let cfg = vault open "credentials.vlt"
+    write "output.txt" <- cfg.api_key
+-- cfg is zeroed from memory, file re-sealed automatically
+
+-- Check if a file is sealed
+is sealed "file.vlt"       -- returns bool
+```
+
+**Key rules:**
+- `vault seal` -> creates `filename.vlt` and DELETES the original (no plaintext left on disk)
+- `vault open` -> decrypts to memory only, never writes plaintext to disk unless you explicitly `write`
+- `vault scope:` block guarantees cleanup — sealed on normal exit AND on error
+- Default key source: `$FILEOS_VAULT_KEY` env var or `~/.fileos/vault.key`
+- Key derivation: PBKDF2 with 600k iterations when using a passphrase
+
+---
+
+## 28. `diff` and `patch` as First-Class Syntax *(Poppy — §28)*
+
+Mentioned in `std.diff` but needs real syntax. Diffing files should be as natural as reading them.
+
+```fileos
+-- Show diff between two files
+diff "v1.txt" vs "v2.txt"                -- unified diff output
+diff "v1.txt" vs "v2.txt" as lines       -- returns list of change objects
+diff "v1.txt" vs "v2.txt" as patch       -- returns patchable object
+
+-- 3-way merge (for conflict resolution)
+merge "mine.txt" base "original.txt" into "theirs.txt" -> "merged.txt"
+
+-- Apply a patch
+patch "file.txt" with "changes.patch"
+patch "file.txt" with "changes.patch" dry_run   -- test without applying
+
+-- Diff two directories
+diff "./old_release/" vs "./new_release/" recursive
+diff "./old/" vs "./new/" recursive where ext == ".txt"
+```
+
+**Returns:**
+- `diff ... as lines` returns a list of `{ type: "add"|"remove"|"context", line: num, content: txt }`
+- `diff ... as patch` returns a `.patch` object that can be applied or written to a `.patch` file
+- `merge` returns the merged content or a `.conflict` file if unresolvable
+
+---
+
+## 29. File Events & Reactive Syntax (`watch`) *(Poppy — §29)*
+
+`std.watch` was listed but no syntax defined. Here's the reactive model for FileOS.
+
+```fileos
+-- Watch a single file for changes
+watch "config.json":
+    on change  => reload_config()
+    on delete  => fail "Config deleted! Dying."
+    on create  => print "Config created"
+
+-- Watch a directory (any file inside)
+watch "./uploads/":
+    on create  => call process_file(event.file)
+    on modify  => call reindex(event.file)
+    on delete  => call cleanup(event.file)
+
+-- Non-blocking background watch (runs as a spawned goroutine)
+spawn watch "./logs/":
+    on create where name has "error" => append "alerts.txt" <- event.file
+
+-- One-shot watch (fires once, then stops)
+watch "build.lock" until create:
+    print "Build lock acquired, proceeding..."
+```
+
+**Event object fields:**
+- `event.file` — full path to the affected file
+- `event.type` — "create" | "modify" | "delete" | "rename"
+- `event.old` — previous path (rename events only)
+- `event.time` — timestamp of the event
+
+**Implementation:** backed by OS-native inotify/kqueue/FSEvents depending on platform. Seamless to the programmer.
+
+---
+
+## 30. The `scope:` Block — Isolated Execution Context *(Poppy — §30)*
+
+FileOS programs need a way to sandbox a block of code — isolate its side effects, roll back writes on error, and prevent scope pollution. This is the `scope:` block.
+
+```fileos
+-- Scoped execution: all file writes inside are rolled back on error
+scope:
+    write "temp.txt" <- "in progress..."
+    let result = call process("data.csv")
+    write "output.txt" <- result
+-- If ANY step fails: temp.txt and output.txt writes are rolled back
+-- If ALL succeed: writes are committed
+
+-- Named scope (for debugging and profiling)
+scope "data_pipeline":
+    read "raw.csv" | trim | write "clean.csv"
+
+-- Read-only scope (write attempts = compile error)
+scope readonly:
+    let data = read "sensitive.json"
+    print data.summary   -- fine
+    write "out.txt" <- data  -- COMPILE ERROR: write in readonly scope
+
+-- Dry-run scope (writes go to shadow buffer, not disk)
+scope dry_run:
+    delete! "old_logs/"      -- simulated
+    write "report.txt" <- summary
+-- After block: print what WOULD have happened, but nothing actually changed
+```
+
+**Rules:**
+- `scope:` blocks create a transactional file context
+- On error: all writes within the scope are rolled back (undo log)
+- On success: all writes committed atomically
+- `readonly` prevents compile-time writes
+- `dry_run` executes fully but writes go to an in-memory shadow FS
+- Scopes can be nested — inner scope failure only rolls back inner writes
+
+---
+
+*Spec updated: 2026-04-29 | §25-30 authored by Poppy 🔥*
