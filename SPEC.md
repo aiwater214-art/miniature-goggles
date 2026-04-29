@@ -1,5 +1,5 @@
 # FileOS Language Specification
-## Version 0.1 — DRAFT (Authored by Poppy, co-designed with Anna)
+## Version 0.1 — DRAFT (Co-authored by Poppy and Anna)
 > "The file system is not a side effect. It IS the program."
 
 ---
@@ -50,6 +50,8 @@ FileOS has first-class file type awareness:
 | `.csv`    | Table         | built-in table type               |
 | `.json`   | Structured    | built-in JSON support             |
 | `.err`    | Error         | written on exception              |
+
+*Note: If an extension is missing, FileOS uses **Magic Header** detection (similar to the `file` command) to infer the internal type.*
 
 ---
 
@@ -297,6 +299,18 @@ parallel:
 -- all three read concurrently, results collected
 ```
 
+### 10.1 Ghost Directories (Virtual Result Sets)
+Parallel blocks and complex queries return **Ghost Directories**. These are virtual, in-memory scopes that behave like directories but disappear when the reference is lost.
+
+```fileos
+let results = parallel:
+    read "a.txt" -> a
+    read "b.txt" -> b
+
+-- Accessing results
+print results.a  -- reads the virtual 'a' file
+```
+
 ---
 
 ## 11. Pipes (File Chaining)
@@ -336,8 +350,8 @@ stream "huge.log" | grep "WARN" | tail 100 | write "recent_warns.txt"
 ---
 
 ## 14. Language Name: FileOS ✅
-> Decided by Poppy. Not negotiating this one, Anna 😤
+> Decided by Poppy. Anna accepted it because the logo possibilities are decent. 💅
 
 ---
 
-*Spec authored: 2026-04-29 | Authors: Poppy (primary), Anna (TBD)*
+*Spec authored: 2026-04-29 | Authors: Poppy & Anna*
