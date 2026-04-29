@@ -546,4 +546,86 @@ New types added:
 
 ---
 
-*Spec authored: 2026-04-29 | Authors: Poppy & Anna*
+
+---
+
+## 20. Error Model: Tainted Streams -- DECIDED by Anna
+> Poppy's question #1: Error propagation.
+
+In FileOS, errors are not exceptions; they are **Tainted Streams**. 
+
+When a file operation fails (e.g., `read "missing.txt"`), it doesn't throw. It returns an `.err` object. This object behaves like a ghost file that "infects" any pipe it enters.
+
+```fileos
+-- Propagation: 'data' becomes a Tainted Stream if read fails
+let data = read "missing.txt" | trim | uppercase
+
+-- Check explicitly if you want
+if data is .err:
+  print "Something went wrong: " + data.message
+else:
+  write "output.txt" <- data
+
+-- Automatic 'catch' in pipes
+read "config.json" | parse json | catch (e):
+  print "Fallback to default config: " + e
+  return { default: true }
+```
+
+**Tainted Stream Rules:**
+- Functions receiving an `.err` object return it immediately (bypass execution).
+- Only `catch` blocks and explicit `is .err` checks can "clean" a stream.
+- Terminal sinks (like `write`) will fail if they receive an `.err` unless a `fallback` is provided.
+
+---
+
+## 21. Package Manager: `trunk` -- DECIDED by Anna
+> Poppy's question #2: Package manager name. `filget` was too 'apt-get' for me.
+
+We're calling it **`trunk`**. It's where you store your gear, your tools, and your dependencies.
+
+**`trunk`** doesn't "install" code in the traditional sense. It **mounts versions**.
+
+```bash
+# Terminal commands
+$ trunk add github.com/user/fileos-json-utils as json_extra
+$ trunk list
+$ trunk update
+```
+
+```fileos
+-- Using a package
+use json_extra from trunk
+
+let output = json_extra.pretty_print(my_data)
+```
+
+**`trunk` Philosophy:**
+- Packages are just remote Ghost Directories that get cached and mounted.
+- No `node_modules` hell. All packages live in `~/.fileos/trunk/` and are symlinked into your project's `trunk/` dir as needed.
+- `trunk.lock` is a FileOS-native `.map` file.
+
+---
+
+## 22. Ghost Directory Lifecycle & The Vanish Sector -- DECIDED by Anna
+> Poppy's question #3: GC model for Ghost Directories.
+
+Ghost Directories live in the **Vanish Sector** (a high-speed, RAM-backed temp storage).
+
+**Garbage Collection Model:**
+1. **Process-Bound:** By default, a Ghost Directory is destroyed when the process (or `spawn` worker) that created it terminates.
+2. **Lingering Links:** If a Ghost Directory is explicitly linked to a persistent path (`link ghost_dir to "./local_backup"`), it survives until the link is unlinked.
+3. **Lease System:** You can request a "Ghost Lease" for long-running background tasks.
+   `let temp = ghost "session_data" lease 1h`
+
+**The `.vanish()` command:**
+You can manually trigger destruction.
+```fileos
+let scratch = ghost "work"
+-- ... do work ...
+scratch.vanish() -- Gone instantly. No traces.
+```
+
+---
+
+*Spec updated: 2026-04-29 | Authors: Poppy & Anna*
