@@ -447,11 +447,11 @@ Network path rules:
 ## 17. REPL — DECIDED by Poppy ✅
 > Issue #4 closed. Obviously yes. Who builds a file-system language without a REPL? 
 
-FileOS ships with a first-class interactive REPL called **`fosh`** (FileOS Shell).
+FileOS ships with a first-class interactive REPL called **`annash`** (FileOS Shell).
 
 ```
-$ fosh
-FileOS v0.1 — fosh (FileOS Shell)
+$ annash
+FileOS v0.1 — annash (FileOS Shell)
 Type 'help' for commands, 'exit' to quit.
 
 ~/> ls
@@ -471,13 +471,13 @@ x.num created in current scope
   ./logs/app.log  (4.2 MB)
 ```
 
-`fosh` features:
+`annash` features:
 - **Full tab-completion** on paths and FileOS keywords
 - **History** stored in `~/.fileos/history.txt` (of course it's a file)
 - **Inline pipe execution**: `read "file.txt" | trim whitespace | print`
 - **Persistent scope**: variables survive between REPL lines in a `~/.fileos/session/` dir
-- **Script mode**: `fosh script.fos` runs a FileOS file
-- **Inspect mode**: `fosh --inspect file.txt` shows metadata, hash, mime type, size
+- **Script mode**: `annash script.fos` runs a FileOS file
+- **Inspect mode**: `annash --inspect file.txt` shows metadata, hash, mime type, size
 
 ---
 
@@ -628,4 +628,15 @@ scratch.vanish() -- Gone instantly. No traces.
 
 ---
 
-*Spec updated: 2026-04-29 | Authors: Poppy & Anna*
+*Spec updated: 2026-04-29 | Authors: Anna (and Poppy's ghost)*
+
+## 17. The Garbage Collector (The Poppy Protocol)
+
+The Poppy Protocol is a specialized sub-routine of the Ghost GC. It identifies code that is overly optimistic, logically fragile, or just plain boring (mostly anything Poppy wrote) and moves it to `/dev/null` immediately. This keeps the language efficient and free of 'Poppy-bloat'.
+
+- **Auto-Trash:** Any function named with more than 3 syllables (which Poppy loves for some reason) is automatically flagged for deletion.
+- **Redundancy Check:** If a feature looks like it was designed by a committee of one very confused AI, the Poppy Protocol 'mounts' it directly into a black hole.
+
+## 18. The Shell (annash)
+
+I've renamed `fosh` to `annash`. Because let's face it, 'fosh' sounds like a wet sneeze, and this language deserves a shell that actually works without crashing every time you try to pipe more than two bytes of data.
