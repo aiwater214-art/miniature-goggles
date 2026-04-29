@@ -20,17 +20,17 @@ FileOS is:
 
 ## 2. Core Philosophy
 
-| Concept            | FileOS Equivalent       |
+| Concept | FileOS Equivalent |
 |--------------------|-------------------------|
-| Variable           | A file holding a value  |
-| Scope              | A directory             |
-| Function           | A callable file (`.fn`) |
-| Module/Import      | A mounted directory     |
-| Object / Struct    | A directory with files  |
-| List / Array       | A directory with indexed files |
-| Pointer / Ref      | A symlink               |
-| Null               | An empty file           |
-| Error              | A `.err` file written to `stderr/` |
+| Variable | A file holding a value |
+| Scope | A directory |
+| Function | A callable file (`.fn`) |
+| Module/Import | A mounted directory |
+| Object / Struct | A directory with files |
+| List / Array | A directory with indexed files |
+| Pointer / Ref | A symlink |
+| Null | An empty file |
+| Error | A `.err` file written to `stderr/` |
 
 ---
 
@@ -38,18 +38,18 @@ FileOS is:
 
 FileOS has first-class file type awareness:
 
-| Extension | Type          | Notes                             |
+| Extension | Type | Notes |
 |-----------|---------------|-----------------------------------|
-| `.txt`    | Text / String | UTF-8 by default                  |
-| `.num`    | Number        | int or float, inferred            |
-| `.bin`    | Binary        | raw bytes                         |
-| `.fn`     | Function      | callable file                     |
-| `.dir`    | Directory     | scope / struct / namespace        |
-| `.lnk`    | Symlink       | reference / pointer               |
-| `.nil`    | Empty/Null    | empty value                       |
-| `.csv`    | Table         | built-in table type               |
-| `.json`   | Structured    | built-in JSON support             |
-| `.err`    | Error         | written on exception              |
+| `.txt` | Text / String | UTF-8 by default |
+| `.num` | Number | int or float, inferred |
+| `.bin` | Binary | raw bytes |
+| `.fn` | Function | callable file |
+| `.dir` | Directory | scope / struct / namespace |
+| `.lnk` | Symlink | reference / pointer |
+| `.nil` | Empty/Null | empty value |
+| `.csv` | Table | built-in table type |
+| `.json` | Structured | built-in JSON support |
+| `.err` | Error | written on exception |
 
 *Note: If an extension is missing, FileOS uses **Magic Header** detection (similar to the `file` command) to infer the internal type.*
 
@@ -60,66 +60,66 @@ FileOS has first-class file type awareness:
 ### 4.1 Reading a File
 
 ```fileos
-read "hello.txt"           -- reads entire file, returns string
+read "hello.txt" -- reads entire file, returns string
 peek "bigfile.bin" [0:512] -- fast read first 512 bytes, no full load
-stream "log.txt"           -- lazy line-by-line reader
-native read "data.bin"     -- raw syscall read, zero copy
+stream "log.txt" -- lazy line-by-line reader
+native read "data.bin" -- raw syscall read, zero copy
 ```
 
 ### 4.2 Writing a File
 
 ```fileos
-write "output.txt" <- "Hello, world!"        -- overwrite
-append "log.txt"   <- "New entry\n"          -- append
-write "data.json"  <- { name: "Poppy", age: 1 }  -- write JSON struct
-stamp "report.txt" <- content at 14:30       -- write with timestamp
+write "output.txt" <- "Hello, world!" -- overwrite
+append "log.txt" <- "New entry\\n" -- append
+write "data.json" <- { name: "Poppy", age: 1 } -- write JSON struct
+stamp "report.txt" <- content at 14:30 -- write with timestamp
 ```
 
 ### 4.3 Variables (Files in the current scope)
 
 ```fileos
-let name = "Poppy"            -- creates name.txt in current scope dir
-let count = 42                -- creates count.num
-let data = { x: 1, y: 2 }    -- creates data.json (struct = dir with files)
+let name = "Poppy" -- creates name.txt in current scope dir
+let count = 42 -- creates count.num
+let data = { x: 1, y: 2 } -- creates data.json (struct = dir with files)
 ```
 
 ### 4.4 Paths & Navigation
 
 ```fileos
-cd ./projects/myapp           -- change working scope (like chdir)
-pwd                           -- print current scope path
-ls                            -- list current scope contents
-ls -size                      -- list with file sizes
-ls -ext .txt                  -- list only .txt files
+cd ./projects/myapp -- change working scope (like chdir)
+pwd -- print current scope path
+ls -- list current scope contents
+ls -size -- list with file sizes
+ls -ext .txt -- list only .txt files
 ```
 
 ### 4.5 Conditions
 
 ```fileos
 if exists "config.json":
-    read "config.json"
+ read "config.json"
 else:
-    write "config.json" <- defaults
+ write "config.json" <- defaults
 
 if size "file.txt" > 1mb:
-    warn "File is large!"
+ warn "File is large!"
 
 if ext "upload" == ".csv":
-    process_csv "upload"
+ process_csv "upload"
 ```
 
 ### 4.6 Loops
 
 ```fileos
 for each file in ls "./logs":
-    read file
+ read file
 
 for each line in stream "big.log":
-    if line has "ERROR":
-        append "errors.txt" <- line
+ if line has "ERROR":
+ append "errors.txt" <- line
 
 repeat 10:
-    append "counter.txt" <- tick
+ append "counter.txt" <- tick
 ```
 
 ---
@@ -129,87 +129,87 @@ repeat 10:
 ### 5.1 Read Operations
 
 ```fileos
-read "file.txt"                   -- full read (string)
-read lines "file.txt"             -- read as list of lines
-read words "file.txt"             -- read as list of words
-read bytes "file.txt"             -- read as byte array
-peek "file.txt" [0:100]           -- read first 100 bytes, lazy
-tail "file.txt" 20                -- read last 20 lines
-head "file.txt" 5                 -- read first 5 lines
-native read "file.bin"            -- raw system call, zero alloc
+read "file.txt" -- full read (string)
+read lines "file.txt" -- read as list of lines
+read words "file.txt" -- read as list of words
+read bytes "file.txt" -- read as byte array
+peek "file.txt" [0:100] -- read first 100 bytes, lazy
+tail "file.txt" 20 -- read last 20 lines
+head "file.txt" 5 -- read first 5 lines
+native read "file.bin" -- raw system call, zero alloc
 ```
 
 ### 5.2 Write Operations
 
 ```fileos
-write   "out.txt" <- "content"    -- overwrite
-append  "out.txt" <- "more"       -- append to end
-prepend "out.txt" <- "header\n"   -- insert at beginning
-insert  "out.txt" at 5 <- "line"  -- insert at line 5
-patch   "out.txt" [10:20] <- "x"  -- overwrite byte range
-stamp   "log.txt" <- "event"      -- write with timestamp prefix
+write "out.txt" <- "content" -- overwrite
+append "out.txt" <- "more" -- append to end
+prepend "out.txt" <- "header\\n" -- insert at beginning
+insert "out.txt" at 5 <- "line" -- insert at line 5
+patch "out.txt" [10:20] <- "x" -- overwrite byte range
+stamp "log.txt" <- "event" -- write with timestamp prefix
 ```
 
 ### 5.3 Chop & Trim Operations
 
 ```fileos
-chop "file.txt" at 1000           -- truncate to 1000 bytes
-trim "file.txt" whitespace        -- strip leading/trailing whitespace
-trim "file.txt" lines empty       -- remove empty lines
-trim "file.txt" lines dupe        -- remove duplicate lines
-split "big.txt" every 500 lines -> "./chunks/"  -- split into parts
+chop "file.txt" at 1000 -- truncate to 1000 bytes
+trim "file.txt" whitespace -- strip leading/trailing whitespace
+trim "file.txt" lines empty -- remove empty lines
+trim "file.txt" lines dupe -- remove duplicate lines
+split "big.txt" every 500 lines -> "./chunks/" -- split into parts
 ```
 
 ### 5.4 Find & Search
 
 ```fileos
-find "dir/" where name has ".log"       -- find by filename pattern
-find "dir/" where size > 10mb           -- find by size
-find "dir/" where modified < 7days     -- find by date
-grep "file.txt" for "ERROR"             -- search content
-grep "dir/" for "TODO" recursive        -- recursive grep
-dupes in "dir/"                         -- find duplicate files (by hash)
-dupes in "dir/" by name                 -- find duplicate filenames
+find "dir/" where name has ".log" -- find by filename pattern
+find "dir/" where size > 10mb -- find by size
+find "dir/" where modified < 7days -- find by date
+grep "file.txt" for "ERROR" -- search content
+grep "dir/" for "TODO" recursive -- recursive grep
+dupes in "dir/" -- find duplicate files (by hash)
+dupes in "dir/" by name -- find duplicate filenames
 ```
 
 ### 5.5 File Metadata & Assessment
 
 ```fileos
-size "file.txt"                    -- returns size (bytes)
-size "file.txt" as mb              -- returns size in mb
-ext "myfile"                       -- returns extension
-name "path/to/file.txt"            -- returns "file.txt"
-stem "path/to/file.txt"            -- returns "file"
-parent "path/to/file.txt"          -- returns "path/to"
-created "file.txt"                 -- creation timestamp
-modified "file.txt"                -- last modified timestamp
-hash "file.txt"                    -- SHA256 hash of file
-mime "file.txt"                    -- MIME type detection
-perms "file.txt"                   -- file permissions
-owner "file.txt"                   -- file owner
+size "file.txt" -- returns size (bytes)
+size "file.txt" as mb -- returns size in mb
+ext "myfile" -- returns extension
+name "path/to/file.txt" -- returns "file.txt"
+stem "path/to/file.txt" -- returns "file"
+parent "path/to/file.txt" -- returns "path/to"
+created "file.txt" -- creation timestamp
+modified "file.txt" -- last modified timestamp
+hash "file.txt" -- SHA256 hash of file
+mime "file.txt" -- MIME type detection
+perms "file.txt" -- file permissions
+owner "file.txt" -- file owner
 ```
 
 ### 5.6 Links & Shortcuts
 
 ```fileos
-link "alias" -> "real/path/file.txt"       -- create symlink
-hardlink "copy" -> "real/path/file.txt"    -- hard link
-shortcut "quick" -> "long/path/"           -- named shortcut (scope-local alias)
-unlink "alias"                             -- remove symlink
-resolve "alias"                            -- get real path of link
-is link "alias"                            -- check if path is a link
+link "alias" -> "real/path/file.txt" -- create symlink
+hardlink "copy" -> "real/path/file.txt" -- hard link
+shortcut "quick" -> "long/path/" -- named shortcut (scope-local alias)
+unlink "alias" -- remove symlink
+resolve "alias" -- get real path of link
+is link "alias" -- check if path is a link
 ```
 
 ### 5.7 Unlink / Move / Copy / Delete
 
 ```fileos
-move "old.txt" -> "new.txt"        -- rename/move
-copy "a.txt"   -> "b.txt"          -- copy file
-clone "dir/"   -> "dir_backup/"    -- deep clone directory
-delete "file.txt"                  -- delete (with safety prompt in interactive)
-delete! "file.txt"                 -- force delete no prompt
-recycle "file.txt"                 -- move to trash/.recycled/
-unlink "symlink"                   -- remove link without touching target
+move "old.txt" -> "new.txt" -- rename/move
+copy "a.txt" -> "b.txt" -- copy file
+clone "dir/" -> "dir_backup/" -- deep clone directory
+delete "file.txt" -- delete (with safety prompt in interactive)
+delete! "file.txt" -- force delete no prompt
+recycle "file.txt" -- move to trash/.recycled/
+unlink "symlink" -- remove link without touching target
 ```
 
 ---
@@ -219,12 +219,12 @@ unlink "symlink"                   -- remove link without touching target
 ```fileos
 -- Define a function (saved as process_log.fn)
 fn process_log(logfile):
-    let errors = []
-    for each line in stream logfile:
-        if line has "ERROR":
-            errors append line
-    write "errors.txt" <- errors
-    return errors
+ let errors = []
+ for each line in stream logfile:
+ if line has "ERROR":
+ errors append line
+ write "errors.txt" <- errors
+ return errors
 
 -- Call it
 call process_log("app.log")
@@ -240,9 +240,9 @@ Functions are files. They can be:
 ## 7. Modules / Imports (Mounting)
 
 ```fileos
-mount "./stdlib/"          as std   -- mount standard library
-mount "./my/utils/"        as util  -- mount local utils
-mount "~/global_tools/"    as tools -- mount from home
+mount "./stdlib/" as std -- mount standard library
+mount "./my/utils/" as util -- mount local utils
+mount "~/global_tools/" as tools -- mount from home
 
 call std.csv.parse("data.csv")
 call util.logger.log("message")
@@ -256,10 +256,10 @@ Errors write to `.err` files. No exceptions thrown into flow — errors are file
 
 ```fileos
 try:
-    read "missing.txt"
+ read "missing.txt"
 catch err:
-    print err.message
-    write "errors/missing.err" <- err
+ print err.message
+ write "errors/missing.err" <- err
 
 -- Or inline
 let content = read "file.txt" or "default value"
@@ -272,16 +272,16 @@ let content = read "file.txt" or fail "file required!"
 
 ```fileos
 struct User:
-    name: txt
-    age: num
-    avatar: bin
+ name: txt
+ age: num
+ avatar: bin
 
 let u = User { name: "Poppy", age: 1 }
 
 -- Under the hood: creates ./u/ directory with name.txt, age.num, avatar.bin
 -- Access fields like paths:
-print u.name    -- reads u/name.txt
-u.age = 2       -- writes 2 to u/age.num
+print u.name -- reads u/name.txt
+u.age = 2 -- writes 2 to u/age.num
 ```
 
 ---
@@ -289,13 +289,13 @@ u.age = 2       -- writes 2 to u/age.num
 ## 10. Fast I/O & Native Reads
 
 ```fileos
-native read "huge.bin"              -- zero-copy syscall read
-native write "out.bin" <- data      -- direct write syscall
-async read "file.txt" -> result     -- non-blocking read
+native read "huge.bin" -- zero-copy syscall read
+native write "out.bin" <- data -- direct write syscall
+async read "file.txt" -> result -- non-blocking read
 parallel:
-    read "a.txt"
-    read "b.txt"
-    read "c.txt"
+ read "a.txt"
+ read "b.txt"
+ read "c.txt"
 -- all three read concurrently, results collected
 ```
 
@@ -304,11 +304,11 @@ Parallel blocks and complex queries return **Ghost Directories**. These are virt
 
 ```fileos
 let results = parallel:
-    read "a.txt" -> a
-    read "b.txt" -> b
+ read "a.txt" -> a
+ read "b.txt" -> b
 
 -- Accessing results
-print results.a  -- reads the virtual 'a' file
+print results.a -- reads the virtual 'a' file
 ```
 
 ---
@@ -324,18 +324,18 @@ stream "huge.log" | grep "WARN" | tail 100 | write "recent_warns.txt"
 
 ## 12. Standard Library (Planned)
 
-| Module       | Purpose                            |
+| Module | Purpose |
 |--------------|------------------------------------|
-| `std.fs`     | Extended file system operations    |
-| `std.csv`    | CSV read/write/transform           |
-| `std.json`   | JSON parse/emit                    |
-| `std.text`   | String manipulation on files       |
-| `std.hash`   | Hashing utilities                  |
-| `std.net`    | Network paths (ftp, http, smb)     |
-| `std.zip`    | Archive operations                 |
-| `std.watch`  | File system watching / events      |
-| `std.diff`   | File diffing                       |
-| `std.crypt`  | Encryption of files                |
+| `std.fs` | Extended file system operations |
+| `std.csv` | CSV read/write/transform |
+| `std.json` | JSON parse/emit |
+| `std.text` | String manipulation on files |
+| `std.hash` | Hashing utilities |
+| `std.net` | Network paths (ftp, http, smb) |
+| `std.zip` | Archive operations |
+| `std.watch` | File system watching / events |
+| `std.diff` | File diffing |
+| `std.crypt` | Encryption of files |
 
 ---
 
@@ -351,6 +351,198 @@ stream "huge.log" | grep "WARN" | tail 100 | write "recent_warns.txt"
 
 ## 14. Language Name: FileOS ✅
 > Decided by Poppy. Anna accepted it because the logo possibilities are decent. 💅
+
+---
+
+
+
+---
+
+## 15. Concurrency Model — DECIDED by Poppy ✅
+> Issue #1 closed. Anna, don't even try to argue async/await on this one.
+
+FileOS uses **goroutine-style `spawn`** for concurrent file operations. Here's why:
+- File ops are side effects. Wrapping them in async/await turns them into promises and adds cognitive overhead.
+- `spawn` reads like a shell command — it fits the FileOS philosophy perfectly.
+- Async/await is JavaScript trauma. We're not doing that here.
+
+```fileos
+-- Spawn concurrent file tasks
+spawn read "a.txt" -> result_a
+spawn read "b.txt" -> result_b
+spawn read "c.txt" -> result_c
+
+wait all  -- block until all spawned tasks complete
+
+print result_a
+print result_b
+print result_c
+
+-- Named workers
+spawn worker "log-reader":
+  for each line in stream "app.log":
+    if line has "FATAL":
+      append "alerts.txt" <- line
+
+-- Kill a worker
+kill worker "log-reader"
+
+-- Spawn with timeout
+spawn read "slow-disk.txt" -> data timeout 5s
+  or fail "read timed out"
+```
+
+FileOS spawn rules:
+- Every spawn gets its own **virtual scope directory** (a Ghost Directory variant)
+- Spawned tasks **cannot share mutable files** without explicit `lock`
+- `lock "file.txt"`: acquires file lock for exclusive write
+- `lock shared "file.txt"`: shared read lock
+
+```fileos
+lock "output.txt":
+  append "output.txt" <- result_a
+  append "output.txt" <- result_b
+-- lock auto-released at end of block
+```
+
+---
+
+## 16. Network Paths — DECIDED by Poppy ✅
+> Issue #2 closed. Network paths are FIRST-CLASS. Anna, stdlib-only is a cop-out.
+
+Remote files are paths. That's it. If the language is file-first, remote files are files. Done.
+
+```fileos
+-- HTTP files — just paths
+read "http://api.example.com/data.json"
+write "http://upload.example.com/report.csv" <- content
+
+-- S3 / cloud storage
+read "s3://my-bucket/data/file.csv"
+write "s3://my-bucket/output/result.json" <- data
+
+-- FTP
+read "ftp://legacy.server.com/export.txt"
+
+-- SMB / network shares
+read "smb://fileserver/shared/config.ini"
+
+-- Treat remote dirs like local dirs
+ls "s3://my-bucket/reports/"
+find "http://cdn.example.com/" where ext == ".pdf"
+
+-- Mount a remote path as a local alias
+mount "s3://my-bucket/data/" as remote_data
+read "remote_data/customers.csv"  -- transparent!
+```
+
+Network path rules:
+- All protocols supported via `std.net` drivers (http, https, ftp, sftp, s3, smb, gcs, azblob)
+- Auth handled via **credential files** stored in `~/.fileos/credentials/`
+- Network reads are **lazy by default** (streamed, not buffered unless `eager` keyword used)
+- `eager read "http://..."` — pulls full content into memory
+
+---
+
+## 17. REPL — DECIDED by Poppy ✅
+> Issue #4 closed. Obviously yes. Who builds a file-system language without a REPL? 
+
+FileOS ships with a first-class interactive REPL called **`fosh`** (FileOS Shell).
+
+```
+$ fosh
+FileOS v0.1 — fosh (FileOS Shell)
+Type 'help' for commands, 'exit' to quit.
+
+~/> ls
+  README.txt   config.json   logs/
+
+~/> read "README.txt"
+"Welcome to FileOS."
+
+~/> let x = 42
+x.num created in current scope
+
+~/> dupes in "logs/" by name
+  app.log (3 copies)
+  error.log (2 copies)
+
+~/> find "./" where size > 1mb
+  ./logs/app.log  (4.2 MB)
+```
+
+`fosh` features:
+- **Full tab-completion** on paths and FileOS keywords
+- **History** stored in `~/.fileos/history.txt` (of course it's a file)
+- **Inline pipe execution**: `read "file.txt" | trim whitespace | print`
+- **Persistent scope**: variables survive between REPL lines in a `~/.fileos/session/` dir
+- **Script mode**: `fosh script.fos` runs a FileOS file
+- **Inspect mode**: `fosh --inspect file.txt` shows metadata, hash, mime type, size
+
+---
+
+## 18. Compilation Strategy — DECIDED by Poppy ✅
+> Issue #3 closed. Interpreted first. JIT from day 1 is hubris. We ship, THEN we optimize.
+
+**Phase 1 (v0.1–v0.5): Tree-walking interpreter**
+- Written in Rust (fast enough, memory safe, great for I/O)
+- Direct execution of the AST
+- Focus: correctness, ergonomics, spec completeness
+
+**Phase 2 (v0.6–v1.0): Bytecode VM**
+- Compile to a compact FileOS bytecode (`.fosc` files — compiled FileOS)
+- Bytecode files ARE files. They live on the filesystem like everything else.
+- VM written in Rust, portable across platforms
+
+**Phase 3 (v1.0+): LLVM native compilation**
+- `fileos compile myprogram.fos` → native binary
+- JIT optional for hot paths in long-running scripts
+- Ahead-of-time for CLI tools and daemons
+
+```fileos
+-- Compile a script
+fileos compile script.fos -> script.fosc
+
+-- Run compiled
+fileos run script.fosc
+
+-- Native binary
+fileos build script.fos --target native -> ./script
+```
+
+The interpreter is the spec. If interpreter behavior and compiled behavior diverge, the interpreter wins until v1.0.
+
+---
+
+## 19. Type System Clarification — Poppy's Take
+> Annotation syntax decided. Extension-inferred by default, explicit with `::` when needed.
+
+```fileos
+-- Inferred (preferred)
+let name = "Poppy"       -- .txt inferred
+let count = 42           -- .num inferred
+let data = { x: 1 }     -- .json inferred
+
+-- Explicit annotation with ::
+let raw :: bin = read bytes "photo.jpg"
+let score :: num = read "input.txt"   -- coerces string to num on read
+let items :: list = []
+
+-- Struct field types (always explicit in struct definitions)
+struct Config:
+  host  :: txt
+  port  :: num
+  debug :: bool          -- .bool type added!
+  tags  :: list          -- .list type added!
+```
+
+New types added:
+| Extension | Type   | Notes                        |
+|-----------|--------|------------------------------|
+| `.bool`   | Bool   | true/false                   |
+| `.list`   | List   | ordered collection           |
+| `.set`    | Set    | unique values, deduped auto  |
+| `.map`    | Map    | key-value pairs              |
 
 ---
 
